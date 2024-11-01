@@ -9,14 +9,27 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Introduction
+## Executive Summary
 
-I have the code for my DDS Project Below, I tried to structure it in an order that makes sense
-and generally follows the order of the presentation.
+Our objective is to help our client, Frito Lay, identify significant factors contributing to employee
+turnover and help build a model that predicts employee attrition.
 
-Here is the link to my YouTube Video
-https://youtu.be/rxVC0JRBMZ0
+To do this we analyzed a data set that was provided to us by DDS Analytics, which we then
+performed an exploratory data analysis on, found those 3 most significant variables, and
+built our predictive model.
 
+Doing this we were able to pinpoint the 3 most statistically significant variables
+Overtime, Job Involvement, and Number of Jobs.
+
+##Materials/Links
+
+
+Youtube Video: https://youtu.be/rxVC0JRBMZ0
+Slideshow: https://drive.google.com/file/d/1I5W7A21uLaF35vSMiw05LhS_zvlMr6GF/view?usp=sharing
+Github: https://github.com/bc-da-goat/CaseStudy1DDS
+Folder with Everything on Google Drive: https://drive.google.com/drive/folders/1l8lC5HXQ_T-WwO1ILPxHWybszR9QKUjC?usp=drive_link
+
+You will find the R-Code below
 ```{r cars}
 install.packages("caret")
 library(caret)
