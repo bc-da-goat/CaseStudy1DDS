@@ -1,0 +1,158 @@
+---
+title: "Robert Carstens DDS Project 1"
+author: "Robert Carstens"
+date: "2024-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+I have the code for my DDS Project Below, I tried to structure it in an order that makes sense
+and generally follows the order of the presentation.
+
+Here is the link to my YouTube Video
+https://youtu.be/rxVC0JRBMZ0
+
+```{r cars}
+install.packages("caret")
+library(caret)
+install.packages("e1071") #naiveBayes()
+library(e1071)
+library(tidyverse)
+install.packages("epiR")
+library(epiR)
+View(Attrition)
+
+#eda
+table(Attrition$Attrition, Attrition$StockOptionLevel)
+plot(Attrition$Attrition,Attrition$YearsAtCompany, xlab = "Attrition", ylab = "Years at Company", main = "Years at Company vs Attrition",pch = 15)
+
+plot(Attrition$Attrition,Attrition$YearsSinceLastPromotion, xlab = "Attrition", ylab = "Years Since Last Promotion", main = "Years Since Last Promotion vs Attrition",pch = 15)
+
+plot(Attrition$Attrition,Attrition$MonthlyIncome, xlab = "Attrition", ylab = "Monthly Income", main = "Monthly Income vs Attrition",pch = 15)
+
+
+#figuring out 3 most important 
+
+#converting to factors
+#attrition
+Attrition$Attrition <- as.factor(Attrition$Attrition)
+#stock options
+Attrition$StockOptionLevel <- as.factor(Attrition$StockOptionLevel)
+
+
+#fitting an initial model
+
+model = naiveBayes(Attrition~MonthlyIncome + TotalWorkingYears + YearsSinceLastPromotion,data = Attrition)
+predictions = predict(model, Attrition[, c("MonthlyIncome", "TotalWorkingYears", "YearsSinceLastPromotion")])
+
+#finding the 3 most important factors
+
+fit1 <- glm(Attrition ~ ., data = Attrition, family = binomial)
+summary(fit1)
+
+summary(Attrition)
+single_value_vars <- sapply(Attrition, function(x) length(unique(x)) == 1)
+single_value_vars
+
+#removing attrition column because it only has 1 value
+Attrition = Attrition %>% select(-StandardHours)
+Attrition = Attrition %>% select(-Over18)
+Attrition = Attrition %>% select(-EmployeeCount)
+# View predictions
+
+print(predictions)
+
+table(Attrition$Attrition)
+
+#creating features
+#creating "Job-Hop Score" based on number of total working years and number of companies worked at
+Attrition = Attrition %>%
+  mutate(jobHop =  (YearsAtCompany * ((TotalWorkingYears+ 1) / (NumCompaniesWorked + 1))))
+
+#splitting test and train data set
+
+set.seed(126)
+trainIndices = sample(seq(1:length(Attrition$MonthlyIncome)),round(.7*length(Attrition$MonthlyIncome)))
+trainAttr = Attrition[trainIndices,]
+testAttr = Attrition[-trainIndices,]
+
+View(trainAttr)
+View(testAttr)
+#Making the data set more balanced
+#After doing some research I have found a way to "downsample"
+# Downsample the training data to balance classes
+trainAttr <- downSample(x = trainAttr[, -which(names(trainAttr) == "Attrition")],
+                        y = trainAttr$Attrition,
+                        list = FALSE)
+colnames(trainAttr)[ncol(trainAttr)] <- "Attrition"
+
+head(trainAttr)
+View(trainAttr)
+head(testAttr)
+
+
+train_nb = naiveBayes(Attrition ~ jobHop + Age + OverTime + EnvironmentSatisfaction +Gender + DistanceFromHome + JobInvolvement , data = trainAttr)
+
+#train_nb = naiveBayes(Attrition ~ OverTime +  NumCompaniesWorked + JobInvolvement , data = trainAttr)
+#train_nb = naiveBayes(Attrition ~ OverTime +  jobHop + JobInvolvement , data = trainAttr)
+test_nb = predict(train_nb, testAttr)
+#train_predict = predict(train_nb,trainAttr)
+#confusionMatrix(train_predict, as.factor(trainAttr$Attrition))
+
+
+confusionMatrix(test_nb, as.factor(testAttr$Attrition))
+TP = 154
+FN = 65
+TN = 31
+FP = 11
+
+
+# Calculate sensitivity
+sensitivity_result <- binom.test(TP, TP + FN, conf.level = 0.95)
+sensitivity <- sensitivity_result$estimate
+sensitivity_CI <- sensitivity_result$conf.int
+
+# Calculate specificity
+specificity_result <- binom.test(TN, TN + FP, conf.level = 0.95)
+specificity <- specificity_result$estimate
+specificity_CI <- specificity_result$conf.int
+
+sensitivity_CI
+
+specificity_CI
+#results are not any better than no information rate
+
+
+
+
+
+
+
+
+
+
+
+#adding predictions to competition data set
+#adding JobHop
+CompSet = CompSet %>%
+  mutate(jobHop =  (YearsAtCompany * ((TotalWorkingYears+ 1) / (NumCompaniesWorked + 1))))
+
+#predicting
+predictions <- predict(train_nb, newdata = CompSet, type = "class")
+
+predictions
+#adding predictions to dataset
+CompSet$Attrition = predictions
+
+View(CompSet)
+
+write.csv(CompSet, "CompSet_with_Attrition.csv", row.names = FALSE)
+getwd()
+
+```
+
